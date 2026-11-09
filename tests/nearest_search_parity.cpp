@@ -32,7 +32,8 @@ void operator delete[](void *value) noexcept { std::free(value); }
 void operator delete(void *value, std::size_t) noexcept { std::free(value); }
 void operator delete[](void *value, std::size_t) noexcept { std::free(value); }
 
-using Point = pcl::PointXYZI;
+// This is FAST-LIO's PointType, including its aligned normal/curvature payload.
+using Point = pcl::PointXYZINormal;
 using Tree = KD_TREE<Point>;
 using Points = Tree::PointVector;
 
@@ -40,6 +41,10 @@ Point point(float x, float y, float z, float intensity = 0)
 {
     Point result;
     result.x = x; result.y = y; result.z = z; result.intensity = intensity;
+    result.normal_x = intensity + 0.25f;
+    result.normal_y = -intensity;
+    result.normal_z = 0.25f;
+    result.curvature = intensity * 0.001f;
     return result;
 }
 
@@ -53,7 +58,9 @@ bool same_points(const Points &a, const Points &b)
     if (a.size() != b.size()) return false;
     for (std::size_t i = 0; i < a.size(); ++i)
         if (!same_float(a[i].x, b[i].x) || !same_float(a[i].y, b[i].y) ||
-            !same_float(a[i].z, b[i].z) || !same_float(a[i].intensity, b[i].intensity))
+            !same_float(a[i].z, b[i].z) || !same_float(a[i].intensity, b[i].intensity) ||
+            !same_float(a[i].normal_x, b[i].normal_x) || !same_float(a[i].normal_y, b[i].normal_y) ||
+            !same_float(a[i].normal_z, b[i].normal_z) || !same_float(a[i].curvature, b[i].curvature))
             return false;
     return true;
 }

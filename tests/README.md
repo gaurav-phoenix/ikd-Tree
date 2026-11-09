@@ -12,7 +12,8 @@ reference-method hooks. Both methods use the same tree, traversal, heap
 comparator and synchronization. The original method fixture is from commit
 `e2e3f4e9d3b95a9e66b1ba83dc98d4a05ed8a3c4`.
 
-The test compares ordered point coordinates/intensity and distances bit for bit
+The test uses FAST-LIO's aligned `pcl::PointXYZINormal` type and compares ordered
+point coordinates/intensity/normal/curvature and distances bit for bit
 for empty trees, signed zero, negative/random coordinates, duplicate points,
 distance ties, radius cutoffs, varying K, point/box deletion and re-addition, and
 independent parallel queries. Map mutations remain below the background rebuild
