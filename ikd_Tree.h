@@ -124,6 +124,19 @@ public:
         {
             delete[] heap;
         }
+        // Nearest_Search owns one scratch heap per calling thread. Retain its
+        // allocation between queries, growing only when the requested K grows.
+        void reset(int min_capacity)
+        {
+            if (min_capacity > cap)
+            {
+                PointType_CMP *replacement = new PointType_CMP[min_capacity];
+                delete[] heap;
+                heap = replacement;
+                cap = min_capacity;
+            }
+            heap_size = 0;
+        }
         void pop()
         {
             if (heap_size == 0)

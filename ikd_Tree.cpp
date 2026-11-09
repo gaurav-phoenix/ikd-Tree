@@ -425,9 +425,10 @@ void KD_TREE<PointType>::Build(PointVector point_cloud)
 template <typename PointType>
 void KD_TREE<PointType>::Nearest_Search(PointType point, int k_nearest, PointVector &Nearest_Points, vector<float> &Point_Distance, float max_dist)
 {
-    MANUAL_HEAP q(2 * k_nearest);
-    q.clear();
-    vector<float>().swap(Point_Distance);
+    // Search never re-enters Nearest_Search. Thread ownership preserves the
+    // original independent scratch storage for parallel matching workers.
+    static thread_local MANUAL_HEAP q(0);
+    q.reset(2 * k_nearest);
     if (Rebuild_Ptr == nullptr || *Rebuild_Ptr != Root_Node)
     {
         Search(Root_Node, k_nearest, point, q, max_dist);
@@ -449,12 +450,14 @@ void KD_TREE<PointType>::Nearest_Search(PointType point, int k_nearest, PointVec
         pthread_mutex_unlock(&search_flag_mutex);
     }
     int k_found = min(k_nearest, int(q.size()));
-    PointVector().swap(Nearest_Points);
-    vector<float>().swap(Point_Distance);
+    Nearest_Points.resize(k_found);
+    Point_Distance.resize(k_found);
     for (int i = 0; i < k_found; i++)
     {
-        Nearest_Points.insert(Nearest_Points.begin(), q.top().point);
-        Point_Distance.insert(Point_Distance.begin(), q.top().dist);
+        // The original loop prepended each heap pop. Fill backwards to retain
+        // that exact neighbor/tie order without shifting previous elements.
+        Nearest_Points[k_found - 1 - i] = q.top().point;
+        Point_Distance[k_found - 1 - i] = q.top().dist;
         q.pop();
     }
     return;
